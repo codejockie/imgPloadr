@@ -23,7 +23,7 @@ describe('Routes', function () {
 
     describe('POSTs', function () {
         it('should handle /images', function () {
-            expect(app.post).to.be.calledWith('/images', image.create);
+            expect(app.post).to.be.calledWith('/images', sinon.match.func, image.create);
         });
         it('should handle /images/:image_id/like', function () {
             expect(app.post).to.be.calledWith('/images/:image_id/like', image.like);

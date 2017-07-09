@@ -34,7 +34,7 @@ describe('Server', function () {
         });
         it('should set the views', function () {
             server();
-            expect(app.set.secondCall.args[0]).to.equal('views');
+            expect(app.set.firstCall.args[0]).to.equal('views');
         });
         it('should configure the app', function () {
             server();
@@ -48,22 +48,22 @@ describe('Server', function () {
         it('should launch the app', function () {
             server();
             expect(app.get).to.be.calledWith('port');
-            expect(app.listen).to.be.calledWith(3300, sinon.match.func);
+            expect(app.listen).to.be.calledWith(3300);
         });
     });
 
     describe('Port', function () {
         it('should be set', function () {
             server();
-            expect(app.set.firstCall.args[0]).to.equal('port');
+            expect(app.set.secondCall.args[0]).to.equal('port');
         });
         it('should default to 3300', function () {
             server();
-            expect(app.set.firstCall.args[1]).to.equal(3300);
+            expect(app.set.secondCall.args[1]).to.equal(3300);
         });
         it('should be configurable', function () {
             process.env.PORT = '5500'; server();
-            expect(app.set.firstCall.args[1]).to.equal('5500');
+            expect(app.set.secondCall.args[1]).to.equal('5500');
         });
     })
 });
