@@ -1,8 +1,21 @@
-var fs = require('fs'),
-    path = require('path'),
-    sidebar = require('../helpers/sidebar'),
-    Models = require('../models'),
-    md5 = require('md5');
+const fs = require('fs');
+const path = require('path');
+const sidebar = require('../helpers/sidebar');
+const Models = require('../models');
+const md5 = require('md5');
+const cloudinary = require('cloudinary');
+
+const {
+    CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET,
+    CLOUDINARY_CLOUD_NAME
+} = process.env;
+
+cloudinary.config({ 
+    cloud_name: CLOUDINARY_CLOUD_NAME, 
+    api_key: CLOUDINARY_API_KEY, 
+    api_secret: CLOUDINARY_API_SECRET
+});
 
 module.exports = {
     index: function (req, res) {
@@ -34,52 +47,45 @@ module.exports = {
         });
     },
     create: function (req, res) {
-        var saveImage = function () {
-            var possible = 'abcdefghijklmnopqrstuvwxyz0123456789',
-                imgUrl = '';
-
-            for (var i = 0; i < 6; i++) {
-                imgUrl += possible.charAt(Math.floor(Math.random() * possible.length));
+        const {
+            body: {
+                description,
+                title
+            },
+            file: {
+                originalname: filename,
+                path: imagePath
             }
+        } = req;
 
-            // search for an image with the same filename by performing a find:            
-            Models.Image.find({ filename: imgUrl }, function (err, images) {
-                if (images.length > 0) {
-                    // if a matching image was found, try again (start over):
-                    saveImage();
+        // Search for an image with the same filename by performing a find:            
+        Models.Image.find({ filename }, (err, images) => {
+            if (images.length > 0) {
+                // if a matching image was found
+                res.send({ error: 'Image exist'});
+            } else {
+                const ext = path.extname(filename).toLowerCase();
+
+                if (ext == '.png' || ext == '.jpg' || ext == '.jpeg' || ext == '.gif') {
+                    // Upload to Cloudinary server
+                    cloudinary.uploader.upload(imagePath, (result) => {
+                        const newImage = new Models.Image({
+                            description,
+                            filename,
+                            title,
+                            url: result.url
+                        });
+
+                        newImage.save((err, image) => {
+                            console.log('Successfully inserted image: ' + image.filename);
+                            res.redirect('/images/' + image.uniqueId);
+                        })
+                    });
                 } else {
-                    var tempPath = req.file.path,
-                        ext = path.extname(req.file.originalname).toLowerCase(),
-                        targetPath = path.resolve('./public/upload/' + imgUrl + ext);
-
-                    if (ext == '.png' || ext == '.jpg' || ext == '.jpeg' || ext == '.gif') {
-                        fs.rename(tempPath, targetPath, function (err) {
-                            if (err) throw err;
-
-                            // create a new Image model, populate its details:                            
-                            var newImg = new Models.Image({
-                                title: req.body.title,
-                                description: req.body.description,
-                                filename: imgUrl + ext
-                            });
-                            // and save the new Image
-                            newImg.save(function (err, image) {
-                                console.log('Successfully inserted image: ' + image.filename);
-                                res.redirect('/images/' + image.uniqueId);
-                            })
-                        });
-                    } else {
-                        fs.unlink(tempPath, function () {
-                            if (err) throw err;
-
-                            res.json(500, { error: "Only image files are allowed." });
-                        });
-                    }
+                    res.json(500, { error: "Only image files are allowed." });
                 }
-            });
-        };
-
-        saveImage();
+            }
+        });
     },
     like: function (req, res) {
         Models.Image.findOne({ filename: { $regex: req.params.image_id } }, function (err, image) {
@@ -113,17 +119,13 @@ module.exports = {
         Models.Image.findOne({ filename: { $regex: req.params.image_id } }, function (err, image) {
             if (err) { throw err };
 
-            fs.unlink(path.resolve('./public/upload/' + image.filename), function (err) {
-                if (err) { throw err };
-
-                Models.Comment.remove({ image_id: image._id }, function (err) {
-                    image.remove(function (err) {
-                        if (!err) {
-                            res.json(true);
-                        } else {
-                            res.json(false);
-                        }
-                    });
+            Models.Comment.remove({ image_id: image._id }, function (err) {
+                image.remove(function (err) {
+                    if (!err) {
+                        res.json(true);
+                    } else {
+                        res.json(false);
+                    }
                 });
             });
         });

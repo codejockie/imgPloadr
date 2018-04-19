@@ -1,7 +1,7 @@
-var home = require('../controllers/home'),
-    image = require('../controllers/image'),
-    multer = require('multer'),
-    upload = multer({ dest: '../public/upload/temp' });
+const home = require('../controllers/home');
+const image = require('../controllers/image');
+const multer = require('multer');
+const upload = multer({ dest: '../public/uploads' });
 
 module.exports.initialise = function (router) {
     router.get('/', home.index);
