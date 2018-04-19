@@ -27,6 +27,13 @@ module.exports = function (app) {
     }).engine);
     app.set('view engine', 'handlebars');
 
+    app.use((req, res, next) => {
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, sid");
+        res.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT");
+        next();
+    });
+
     app.use(morgan('dev'));
     app.use(bodyParser.urlencoded({ extended: false }))
     app.use(bodyParser.json());
@@ -36,18 +43,6 @@ module.exports = function (app) {
     // Get defined routes from routes.js
     router = routes.initialise(express.Router());
     app.use('/', router);
-
-    // Ensure the temporary upload folders exist 
-    fs.exists(path.join(__dirname, '../public/upload/temp'), function (exist) {
-        if (!exist) {
-            fs.mkdir(path.join(__dirname, '../public/upload'), function (err) {
-                console.log(err);
-                fs.mkdir(path.join(__dirname, '../public/upload/temp'), function (err) {
-                    console.log(err);
-                });
-            });
-        }
-    });
     
     app.use(express.static(path.join(__dirname, '../public')));
 

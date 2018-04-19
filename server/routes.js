@@ -1,7 +1,13 @@
 const home = require('../controllers/home');
 const image = require('../controllers/image');
 const multer = require('multer');
-const upload = multer({ dest: '../public/uploads' });
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, '../public')
+    }
+})
+const upload = multer({ storage });
 
 module.exports.initialise = function (router) {
     router.get('/', home.index);
