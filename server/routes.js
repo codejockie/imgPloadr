@@ -4,9 +4,9 @@ const multer = require('multer');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, '../public')
+      cb(null, '../public');
     }
-})
+});
 const upload = multer({ storage });
 
 module.exports.initialise = function (router) {
@@ -19,6 +19,5 @@ module.exports.initialise = function (router) {
 
     router.delete('/images/:image_id', image.remove);
 
-    // app.use('/', router);
     return router;
 };
